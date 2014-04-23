@@ -1,9 +1,9 @@
 <?php
 /*
  * Plugin Name:	cbnet Multi Author Comment Notification
- * Plugin URI:	http://www.chipbennett.net/wordpress/plugins/cbnet-multi-author-comment-notification/
+ * Plugin URI:	https://github.com/chipbennett/cbnet-multi-author-comment-notification
  * Description:	Send comment notification emails to multiple users. Select users individually or by user role, or send emails to arbitrary email addresses.
- * Version:		3.1
+ * Version:		3.2
  * Author:		chipbennett
  * Author URI:	http://www.chipbennett.net/
  * Text Domain:	cbnet-multi-author-comment-notification
@@ -63,6 +63,14 @@ function cbnet_macn_get_notification_email_addresses( $type = 'moderation' ) {
 
 	// Determine email type
 	$email_type = ( 'notification' == $type ? 'notification' : 'moderation' );
+
+	// Fetch transient
+	$cbnet_macn_email_addresses_transient = get_site_transient( 'cbnet_macn_' . $email_type . '_email_addresses' );
+	
+	// Return transient if it exists
+	if ( $cbnet_macn_email_addresses_transient ) {
+		return $cbnet_macn_email_addresses_transient;
+	}
 	
 	// Globalize options
 	global $cbnet_macn_options;
@@ -111,15 +119,18 @@ function cbnet_macn_get_notification_email_addresses( $type = 'moderation' ) {
 			unset( $email_addresses[$site_admin_email] );
 		}
 	} else {
-		$email_addresses = array_merge( $email_addresses, $site_admin_email );
+		$email_addresses = array_merge( $email_addresses, array( $site_admin_email ) );
 	}
+	
+	// Set transient
+	set_site_transient( 'cbnet_macn_' . $email_type . '_email_addresses', $email_addresses, 60*60*24*7 );
 	
 	// Return array
 	return apply_filters( 'cbnet_macn_notify_email_addresses', array_unique( $email_addresses ) );
 }
 
 /**
- * Filter array of comment notificaiton email addresses
+ * Filter array of comment notification email addresses
  */
 function cbnet_macn_filter_comment_notification_email_to( $email_to ) {	
 	global $cbnet_macn_options;
@@ -131,7 +142,7 @@ function cbnet_macn_filter_comment_notification_email_to( $email_to ) {
 add_filter( 'comment_notification_recipients', 'cbnet_macn_filter_comment_notification_email_to' );
 
 /**
- * Filter array of moderation notificaiton email addresses
+ * Filter array of moderation notification email addresses
  */
 function cbnet_macn_filter_comment_moderation_email_to( $email_to ) {
 	global $cbnet_macn_options;
